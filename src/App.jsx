@@ -1,58 +1,52 @@
-import React, { useState } from "react";
-import "./App.css";
+import { useEffect, useState } from "react"
+import { NewTodoForm } from "./NewTodoForm"
+import "./App.css"
+import { TodoList } from "./TodoList"
 
-function App() {
-  const [task, setTask] = useState("");
-  const [tasks, setTasks] = useState([]);
+export default function App() {
+  const [todos, setTodos] = useState(() => {
+    const localValue = localStorage.getItem("ITEMS")
+    if (localValue == null) return []
 
-  const addTask = () => {
-    if (task.trim() !== "") {
-      setTasks([...tasks, { text: task, completed: false }]);
-      setTask("");
-    }
-  };
+    return JSON.parse(localValue)
+  })
 
-  const toggleCompletion = (index) => {
-    const updatedTasks = tasks.map((t, i) =>
-      i === index ? { ...t, completed: !t.completed } : t
-    );
-    setTasks(updatedTasks);
-  };
+  useEffect(() => {
+    localStorage.setItem("ITEMS", JSON.stringify(todos))
+  }, [todos])
 
-  const deleteTask = (index) => {
-    const updatedTasks = tasks.filter((_, i) => i !== index);
-    setTasks(updatedTasks);
-  };
+  function addTodo(title) {
+    setTodos(currentTodos => {
+      return [
+        ...currentTodos,
+        { id: crypto.randomUUID(), title, completed: false },
+      ]
+    })
+  }
+
+  function toggleTodo(id, completed) {
+    setTodos(currentTodos => {
+      return currentTodos.map(todo => {
+        if (todo.id === id) {
+          return { ...todo, completed }
+        }
+
+        return todo
+      })
+    })
+  }
+
+  function deleteTodo(id) {
+    setTodos(currentTodos => {
+      return currentTodos.filter(todo => todo.id !== id)
+    })
+  }
 
   return (
-    <div className="App">
-      <h1>To-Do List</h1>
-      <div className="input-container">
-        <input
-          type="text"
-          placeholder="Add a new task..."
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
-        />
-        <button onClick={addTask}>Add</button>
-      </div>
-      <ul className="task-list">
-        {tasks.map((t, index) => (
-          <li key={index} className={`task-item ${t.completed ? "completed" : ""}`}>
-            <input
-              type="checkbox"
-              checked={t.completed}
-              onChange={() => toggleCompletion(index)}
-            />
-            <span>{t.text}</span>
-            <button onClick={() => deleteTask(index)} className="delete-button">
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+    <>
+      <NewTodoForm onSubmit={addTodo} />
+      <h1 className="header">Todo List</h1>
+      <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />
+    </>
+  )
 }
-
-export default App;
